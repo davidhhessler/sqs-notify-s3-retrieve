@@ -1,0 +1,11 @@
+# Init configuration
+init
+
+# Project directory
+.idea
+
+# File incoming directory
+incoming
+
+# Compiled python
+*.pyc
