@@ -6,7 +6,12 @@ Launch the Docker container with the SQS queue you want to monitor. AWS Region, 
 should all be specified as Docker environment parameters.
 
 ```
-docker run -it -e AWS_DEFAULT_REGION=us-east-1 -e AWS_ACCESS_KEY_ID=your_access_key -e AWS_SECRET_ACCESS_KEY=your_secret_key gisjedi/sqs-notify-s3-retrieve my_queue_id -w
+docker run -it \
+  -e AWS_DEFAULT_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=your_access_key \
+  -e AWS_SECRET_ACCESS_KEY=your_secret_key \
+  gisjedi/sqs-notify-s3-retrieve \
+  my_queue_id -w
 ```
 
 Get full usage options:
