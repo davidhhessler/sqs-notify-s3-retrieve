@@ -13,13 +13,17 @@ parser.add_argument('--flatten', '-f', dest='flatten', action='store_true', defa
                     help='download all s3 objects directly into root of incoming ignoring s3 folders')
 parser.add_argument('--watch', '-w', dest='watch', action='store_true', default=False,
                     help='endlessly poll for notification. interrupt via SIGINT')
+parser.add_argument('--chunk-size', '-s', dest='chunk_size', default=8 * 1024 * 1024,
+                    help='maximum object size for multi-part chunk')
+parser.add_argument('--concurrency', '-c', dest='concurrency', default=1,
+                    help='concurrent connections for retrieval')
 # TODO: Add some args for SQS performance parameters
 
 args = parser.parse_args()
 print('Launching with args: %s' % args)
 
 messages = dequeue.DequeueMessage(args.queue)
-retriever = retrieve.ObjectRetriever(args.dir, args.flatten)
+retriever = retrieve.ObjectRetriever(args.dir, args.flatten, args.chunk_size, args.concurrency)
 
 messages.receive(retriever.download_object)
 while args.watch:

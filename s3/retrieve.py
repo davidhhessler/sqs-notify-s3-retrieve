@@ -1,11 +1,19 @@
 import boto3
 import os
 
+from boto3.s3.transfer import TransferConfig, S3Transfer
+
 
 class ObjectRetriever(object):
-    def __init__(self, target_dir, flatten):
+    def __init__(self, target_dir, flatten, chunk_size, concurrency):
         # Get the service resource
-        self.s3 = boto3.client('s3')
+        client = boto3.client('s3')
+
+        config = TransferConfig(
+            multipart_threshold=chunk_size,
+            max_concurrency=concurrency
+        )
+        self.s3 = S3Transfer(client, config)
 
         # Set up instance variables
         self.target_dir = target_dir
