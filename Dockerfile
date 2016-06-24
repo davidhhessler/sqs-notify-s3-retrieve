@@ -1,6 +1,6 @@
 FROM python:2-alpine
 
-RUN mkdir /app && mkdir /incoming
+RUN mkdir /app && mkdir /incoming && ln -s /incoming /app/incoming
 WORKDIR /app
 
 COPY requirements.txt /app/
