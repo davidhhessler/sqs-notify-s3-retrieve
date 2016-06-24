@@ -61,18 +61,23 @@ class DequeueMessage(object):
         :param s3_callback: function pointer responsible for processing s3 object
         """
 
-        body = json.loads(message.body)
+        try:
+            body = json.loads(message.body)
 
-        if body['Subject'] == 'Amazon S3 Notification' and body['Type'] == 'Notification':
-            message = json.loads(body['Message'])
+            if body['Subject'] == 'Amazon S3 Notification' and body['Type'] == 'Notification':
+                message = json.loads(body['Message'])
 
-            for record in message['Records']:
-                if 'eventName' in record and record['eventName'].startswith('ObjectCreated') and 'eventVersion' in record and record['eventVersion'] == self.event_version_supported:
-                    s3_callback(record['s3'])
-                else:
-                    # Log message that didn't match with valid EventName and EventVersion
-                    print 'Unable to process message as it does not match EventName and EventVersion: ' \
-                          '%s' % json.dumps(message)
-        else:
-            print 'Unable to process message as it does not appear to be an S3 notification: ' \
-                  '%s' % json.dumps(message)
+                for record in message['Records']:
+                    if 'eventName' in record and record['eventName'].startswith('ObjectCreated') and \
+                                    'eventVersion' in record and record['eventVersion'] == self.event_version_supported:
+                        s3_callback(record['s3'])
+                    else:
+                        # Log message that didn't match with valid EventName and EventVersion
+                        print 'Unable to process message as it does not match EventName and EventVersion: ' \
+                              '%s' % json.dumps(message)
+            else:
+                print 'Unable to process message as it does not appear to be an S3 notification: ' \
+                      '%s' % json.dumps(message)
+        except TypeError as ex:
+            print 'Unable to process message not recognized as valid JSON: %s.' % message
+            print ex
