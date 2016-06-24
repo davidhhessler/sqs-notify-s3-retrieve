@@ -1,5 +1,7 @@
-import boto3
 import json
+import logging
+
+import boto3
 
 
 class DequeueMessage(object):
@@ -30,7 +32,7 @@ class DequeueMessage(object):
         :param s3_callback: function callback that must either process s3 object or throw error
         """
 
-        print 'Beginning long-poll against queue with wait time of %s seconds.' % self.wait_time
+        logging.info('Beginning long-poll against queue with wait time of %s seconds.' % self.wait_time)
         messages = self.queue.receive_messages(MaxNumberOfMessages=self.messages_per_request,
                                                WaitTimeSeconds=self.wait_time)
         while len(messages):
@@ -73,11 +75,10 @@ class DequeueMessage(object):
                         s3_callback(record['s3'])
                     else:
                         # Log message that didn't match with valid EventName and EventVersion
-                        print 'Unable to process message as it does not match EventName and EventVersion: ' \
-                              '%s' % json.dumps(message)
+                        logging.error('Unable to process message as it does not match EventName and EventVersion: '
+                                      '%s' % json.dumps(message))
             else:
-                print 'Unable to process message as it does not appear to be an S3 notification: ' \
-                      '%s' % json.dumps(message)
+                logging.error('Unable to process message as it does not appear to be an S3 notification: '
+                              '%s' % json.dumps(message))
         except TypeError as ex:
-            print 'Unable to process message not recognized as valid JSON: %s.' % message
-            print ex
+            logging.exception('Unable to process message not recognized as valid JSON: %s.' % message)

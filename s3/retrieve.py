@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -44,14 +45,14 @@ class ObjectRetriever(object):
         if s3_dict['object']['size']:
             full_download = os.path.join(download_path, object_name)
 
-            print "Downloading '%s' from bucket '%s' to '%s'..." % \
-                  (object_key, bucket_name, full_download)
+            logging.info("Downloading '%s' from bucket '%s' to '%s'..." %
+                         (object_key, bucket_name, full_download))
 
             start_time = time.time()
             self.s3.download_file(bucket_name, object_key, full_download)
             elapsed_time = time.time() - start_time
             file_size = os.path.getsize(full_download)
-            print 'Downloading complete. %s bytes downloaded in %s at %s MiB/s' % \
-                  (file_size, elapsed_time, file_size / 1024 / 1024 / elapsed_time)
+            logging.info('Downloading complete. %s bytes downloaded in %s at %s MiB/s' %
+                         (file_size, elapsed_time, file_size / 1024 / 1024 / elapsed_time))
         else:
-            print 'Skipping directory or 0 byte file: %s' % object_key
+            logging.warning('Skipping directory or 0 byte file: %s' % object_key)
