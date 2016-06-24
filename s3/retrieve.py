@@ -6,6 +6,8 @@ import boto3
 
 from boto3.s3.transfer import TransferConfig, S3Transfer
 
+MiB = 1024 * 1024
+
 
 class ObjectRetriever(object):
     def __init__(self, target_dir, flatten, chunk_size, concurrency):
@@ -52,7 +54,7 @@ class ObjectRetriever(object):
             self.s3.download_file(bucket_name, object_key, full_download)
             elapsed_time = time.time() - start_time
             file_size = os.path.getsize(full_download)
-            logging.info('Downloading complete. %s bytes downloaded in %s at %s MiB/s' %
-                         (file_size, elapsed_time, file_size / 1024 / 1024 / elapsed_time))
+            logging.info('Downloading complete. %s MiBs downloaded in %s seconds at %s MiB/s' %
+                         (file_size / MiB, elapsed_time, file_size / MiB / elapsed_time))
         else:
             logging.warning('Skipping directory or 0 byte file: %s' % object_key)
