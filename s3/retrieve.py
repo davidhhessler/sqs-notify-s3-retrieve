@@ -4,13 +4,13 @@ import time
 
 import boto3
 
-from boto3.s3.transfer import TransferConfig, S3Transfer
+from boto3.s3.transfer import TransferConfig, S3Transfer, random_file_extension
 
 MiB = 1024 * 1024
 
 
 class ObjectRetriever(object):
-    def __init__(self, target_dir, flatten, chunk_size, concurrency):
+    def __init__(self, target_dir, flatten, chunk_size, concurrency, temp_suffix):
         # Get the service resource
         client = boto3.client('s3')
 
@@ -23,6 +23,7 @@ class ObjectRetriever(object):
         # Set up instance variables
         self.target_dir = target_dir
         self.flatten = flatten
+        self.temp_suffix = temp_suffix
 
     def download_object(self, s3_dict):
         """Downloads an S3 object to a local directory specified by S3Retrieve instance
@@ -44,17 +45,40 @@ class ObjectRetriever(object):
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
-        if s3_dict['object']['size']:
-            full_download = os.path.join(download_path, object_name)
+        full_download = os.path.join(download_path, object_name)
+        logging.info("Downloading '%s' from bucket '%s' to '%s'..." %
+                     (object_key, bucket_name, full_download))
 
-            logging.info("Downloading '%s' from bucket '%s' to '%s'..." %
-                         (object_key, bucket_name, full_download))
+        self._download_file(bucket_name, object_key, full_download)
 
+    def _download_file(self, bucket, key, filename):
+        """Download an S3 object to a file.
+
+        This method is a straight port of the S3Transfer download_file method to
+        override the random extension behavior with an explicit suffix
+        """
+        # This method will issue a ``head_object`` request to determine
+        # the size of the S3 object.  This is used to determine if the
+        # object is downloaded in parallel.
+        object_size = self.s3._object_size(bucket, key, {})
+        if not object_size:
+            logging.warning('Skipping directory or 0 byte file: %s' % key)
+            return
+
+        temp_filename = '%s%s%s%s' % (filename, os.extsep, random_file_extension(), self.temp_suffix)
+        try:
             start_time = time.time()
-            self.s3.download_file(bucket_name, object_key, full_download)
+            # Download file with in-progress name
+            self.s3._download_file(bucket, key, temp_filename, object_size,
+                                   {}, None)
             elapsed_time = time.time() - start_time
-            file_size = os.path.getsize(full_download)
+            # Rename file to final download
             logging.info('Downloading complete. %s MiBs downloaded in %s seconds at %s MiB/s' %
-                         (file_size / MiB, elapsed_time, file_size / MiB / elapsed_time))
+                         (object_size / MiB, elapsed_time, object_size / MiB / elapsed_time))
+        except Exception:
+            logging.debug("Exception caught in download_file, removing partial "
+                         "file: %s", temp_filename, exc_info=True)
+            self.s3._osutil.remove_file(temp_filename)
+            raise
         else:
-            logging.warning('Skipping directory or 0 byte file: %s' % object_key)
+            self.s3._osutil.rename_file(temp_filename, filename)
